@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDOS — Bounkeo Digital Operating System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1018;
+    --ink2:#141926;
+    --surface:#1a2030;
+    --surface2:#212a3d;
+    --line:#2c3650;
+    --line-soft:#222a3d;
+    --txt:#e7ecf5;
+    --muted:#8a96ad;
+    --muted2:#5e6a82;
+    --amber:#ffb454;
+    --amber-dim:#c98a3a;
+    --path:#54d6c4;
+    --path-dim:#2e8c81;
+    --coral:#ff6b6b;
+    --violet:#9d8cff;
+    --r:#54d6c4;
+    --a:#7aa2ff;
+    --p:#ffb454;
+    --arc:#9d8cff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--txt);
+    font-family:'Noto Sans Thai','Inter',system-ui,sans-serif;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+  .disp{font-family:'Space Grotesk',sans-serif}
+  ::selection{background:var(--amber);color:var(--ink)}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* ---------- DEPTH RULER BG ---------- */
+  .ruler-bg{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    pointer-events:none;z-index:0;opacity:.5;
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px);
+    background-size:100% 64px;
+  }
+
+  /* ---------- MASTHEAD ---------- */
+  header{position:relative;z-index:1;padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;
+    color:var(--path);border:1px solid var(--path-dim);border-radius:100px;
+    padding:6px 14px;text-transform:uppercase;
+  }
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--path);box-shadow:0 0 10px var(--path)}
+  h1.title{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(44px,9vw,104px);line-height:.95;letter-spacing:-.03em;
+    margin:24px 0 6px;
+  }
+  h1.title span{color:var(--amber)}
+  .subtitle{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:clamp(13px,2.2vw,17px);letter-spacing:.02em}
+  .thesis{
+    margin-top:34px;max-width:760px;font-size:clamp(19px,2.8vw,27px);
+    font-weight:500;line-height:1.5;letter-spacing:-.01em;
+  }
+  .thesis b{color:var(--amber);font-weight:600}
+  .thesis .strike{color:var(--muted2);text-decoration:line-through;text-decoration-thickness:2px}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:34px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)}
+  .meta-row b{color:var(--txt);font-weight:500}
+
+  /* ---------- SECTION SHELL ---------- */
+  section{position:relative;z-index:1;padding:72px 0;border-bottom:1px solid var(--line-soft)}
+  .eyebrow{
+    display:flex;align-items:center;gap:14px;margin-bottom:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--path);
+  }
+  .eyebrow .num{color:var(--muted2)}
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(28px,4.6vw,44px);line-height:1.08;letter-spacing:-.02em;margin-bottom:18px}
+  h2 .hl{color:var(--amber)}
+  .lead{color:var(--muted);font-size:clamp(15px,2vw,17.5px);max-width:720px;margin-bottom:36px}
+  .lead b{color:var(--txt);font-weight:500}
+
+  /* ---------- RAPA ---------- */
+  .rapa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .rapa-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 20px;
+    position:relative;overflow:hidden;transition:transform .25s,border-color .25s;
+  }
+  .rapa-card:hover{transform:translateY(-4px)}
+  .rapa-card .letter{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:54px;line-height:1;margin-bottom:14px}
+  .rapa-card h3{font-size:17px;font-weight:600;margin-bottom:6px}
+  .rapa-card p{font-size:13.5px;color:var(--muted);line-height:1.55}
+  .rapa-card .bar{position:absolute;top:0;left:0;width:100%;height:4px}
+  .rapa-card.r .letter{color:var(--r)} .rapa-card.r .bar{background:var(--r)} .rapa-card.r:hover{border-color:var(--r)}
+  .rapa-card.a .letter{color:var(--a)} .rapa-card.a .bar{background:var(--a)} .rapa-card.a:hover{border-color:var(--a)}
+  .rapa-card.p .letter{color:var(--p)} .rapa-card.p .bar{background:var(--p)} .rapa-card.p:hover{border-color:var(--p)}
+  .rapa-card.arc .letter{color:var(--arc)} .rapa-card.arc .bar{background:var(--arc)} .rapa-card.arc:hover{border-color:var(--arc)}
+  .rapa-note{margin-top:22px;font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
+  .rapa-note .tag{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);border:1px solid var(--amber-dim);border-radius:6px;padding:2px 8px}
+
+  /* ---------- STORAGE ---------- */
+  .storage{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+  .stbar-set{display:flex;flex-direction:column;gap:14px}
+  .stbar{}
+  .stbar .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;font-size:13.5px}
+  .stbar .top .name{font-weight:500}
+  .stbar .top .val{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+  .track{height:14px;background:var(--ink2);border-radius:8px;overflow:hidden;border:1px solid var(--line-soft)}
+  .fill{height:100%;border-radius:8px}
+  .total-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:30px;text-align:center}
+  .total-card .big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:64px;line-height:1;color:var(--amber)}
+  .total-card .lbl{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-top:8px}
+  .total-card .split{display:flex;gap:18px;margin-top:24px;text-align:left;border-top:1px solid var(--line);padding-top:20px}
+  .total-card .split div{flex:1}
+  .total-card .split .k{font-size:12px;color:var(--muted)}
+  .total-card .split .v{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600}
+
+  /* ---------- COMPARE TREES ---------- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .panel .ph{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.08em}
+  .panel .ph .pill{font-size:10px;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.1em}
+  .panel.cur .ph .pill{background:rgba(255,107,107,.14);color:var(--coral)}
+  .panel.new .ph .pill{background:rgba(84,214,196,.14);color:var(--path)}
+  .tree{padding:16px 18px 20px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.95}
+  .tree .row{display:flex;align-items:center;gap:8px;color:var(--muted)}
+  .tree .row .ic{opacity:.6}
+  .tree .row.hi{color:var(--txt)}
+  .tree .row.acc{color:var(--amber)}
+  .tree .ind1{padding-left:20px} .tree .ind2{padding-left:40px}
+
+  /* ---------- DEPTH DESCENT (signature) ---------- */
+  .descent-head{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-end;margin-bottom:28px}
+  .descent-stat{display:flex;gap:26px}
+  .descent-stat .s .n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:40px;line-height:1}
+  .descent-stat .s .n.bad{color:var(--coral)} .descent-stat .s .n.good{color:var(--path)}
+  .descent-stat .s .l{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .descent{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:18px 18px 18px 64px;overflow:hidden}
+  .descent::before{content:"";position:absolute;left:44px;top:0;bottom:0;width:1px;background:linear-gradient(var(--path),var(--coral))}
+  .step{position:relative;padding:9px 0 9px 16px;font-family:'JetBrains Mono',monospace;font-size:13.5px;display:flex;align-items:center;gap:10px}
+  .step .lv{position:absolute;left:-52px;width:30px;text-align:right;font-size:11px;color:var(--muted2)}
+  .step .node{width:9px;height:9px;border-radius:50%;flex-shrink:0;position:absolute;left:-22px;border:2px solid var(--ink)}
+  .step .name{color:var(--txt)}
+  .step .seg{color:var(--muted)}
+  .step.deep .name{color:var(--coral)}
+  .step.deep .seg{color:#b85a5a}
+  .descent-cap{margin-top:18px;font-size:13.5px;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
+  .descent-cap b{color:var(--coral)}
+
+  /* ---------- LIFECYCLE ---------- */
+  .life{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:8px}
+  .life-stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 16px;position:relative;text-align:center}
+  .life-stage .idx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2)}
+  .life-stage .nm{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;margin:8px 0 6px;letter-spacing:.02em}
+  .life-stage .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .life-stage .arrow{position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--line);font-size:18px;z-index:2}
+  .life-stage:last-child .arrow{display:none}
+  .life-stage.raw{border-top:3px solid #6b8cff}
+  .life-stage.edit{border-top:3px solid var(--amber)}
+  .life-stage.exp{border-top:3px solid var(--path)}
+  .life-stage.ast{border-top:3px solid var(--violet)}
+  .life-stage.arc{border-top:3px solid var(--muted2)}
+
+  /* ---------- GENERIC GRID CARDS ---------- */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .card h4{font-size:16px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+  .card .role{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--path);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+  .card ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  .card ul li{font-size:13.5px;color:var(--muted);padding-left:16px;position:relative}
+  .card ul li::before{content:"›";position:absolute;left:0;color:var(--amber)}
+
+  /* sync */
+  .sync{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .sync .box{border-radius:14px;padding:22px;border:1px solid var(--line)}
+  .sync .yes{background:rgba(84,214,196,.06);border-color:var(--path-dim)}
+  .sync .no{background:rgba(255,107,107,.05);border-color:#5a3a3a}
+  .sync .box h4{font-size:15px;margin-bottom:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .sync .yes h4{color:var(--path)} .sync .no h4{color:var(--coral)}
+  .sync .box ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .sync .box li{font-size:13.5px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+
+  /* ---------- OBSIDIAN VAULT ---------- */
+  .vault{display:flex;flex-wrap:wrap;gap:10px}
+  .vault .v{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;align-items:center;gap:10px}
+  .vault .v .n{color:var(--violet);font-weight:600}
+
+  /* ---------- AGENT RULES ---------- */
+  .rules{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .rule{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;align-items:flex-start}
+  .rule .rn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--amber);flex-shrink:0;width:32px;line-height:1.2}
+  .rule .rt{font-size:13.5px;color:var(--muted)}
+  .rule .rt b{color:var(--txt);font-weight:500}
+
+  /* ---------- CASE STUDIES ---------- */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+  .tab{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.04em;
+    background:var(--surface);border:1px solid var(--line);color:var(--muted);
+    padding:10px 16px;border-radius:10px;cursor:pointer;transition:all .2s;
+  }
+  .tab:hover{color:var(--txt);border-color:var(--muted2)}
+  .tab.active{background:var(--amber);color:var(--ink);border-color:var(--amber);font-weight:600}
+  .case{display:none;animation:fade .35s ease}
+  .case.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .case-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;margin-bottom:8px}
+  .case-head h3{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .case-head .scn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--path);text-transform:uppercase;letter-spacing:.1em}
+  .case-intro{color:var(--muted);font-size:14.5px;margin-bottom:24px;max-width:740px}
+  .steps{position:relative;margin-left:6px}
+  .cstep{position:relative;padding:0 0 22px 30px;border-left:1px solid var(--line)}
+  .cstep:last-child{border-left:1px solid transparent;padding-bottom:0}
+  .cstep .marker{position:absolute;left:-9px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--ink);border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--amber);font-weight:700}
+  .cstep h5{font-size:15px;font-weight:600;margin-bottom:5px}
+  .cstep p{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+  .cstep .pathbox{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--ink2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 12px;color:var(--path);overflow-x:auto;white-space:nowrap}
+  .cstep .pathbox .dim{color:var(--muted2)}
+  .cstep .pathbox.warn{color:var(--coral);border-color:#5a3a3a}
+  .cstep .note{font-size:12.5px;color:var(--amber-dim);margin-top:8px;display:flex;gap:8px;align-items:flex-start}
+  .case-outcome{margin-top:8px;background:rgba(84,214,196,.06);border:1px solid var(--path-dim);border-radius:12px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start}
+  .case-outcome .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--path);letter-spacing:.1em;flex-shrink:0;padding-top:2px}
+  .case-outcome p{font-size:13.5px;color:var(--txt)}
+
+  /* click compare mini */
+  .clickcmp{display:flex;gap:14px;margin:18px 0 4px;flex-wrap:wrap}
+  .clickcmp .cc{flex:1;min-width:200px;border-radius:12px;padding:16px;border:1px solid var(--line)}
+  .clickcmp .cc .h{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  .clickcmp .cc.before{background:rgba(255,107,107,.05)} .clickcmp .cc.before .h{color:var(--coral)}
+  .clickcmp .cc.after{background:rgba(84,214,196,.06)} .clickcmp .cc.after .h{color:var(--path)}
+  .dots{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .dots .d{width:14px;height:14px;border-radius:50%;border:1.5px solid}
+  .clickcmp .before .d{border-color:var(--coral);background:rgba(255,107,107,.25)}
+  .clickcmp .after .d{border-color:var(--path);background:rgba(84,214,196,.3)}
+  .clickcmp .cc .cnt{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;margin-top:10px}
+  .clickcmp .before .cnt{color:var(--coral)} .clickcmp .after .cnt{color:var(--path)}
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:60px 0 80px;text-align:center;position:relative;z-index:1}
+  footer .fmark{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.01em}
+  footer .fmark span{color:var(--amber)}
+  footer p{color:var(--muted2);font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:10px}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+  .rv.in{opacity:1;transform:none}
+
+  @media(max-width:860px){
+    .rapa-grid{grid-template-columns:1fr 1fr}
+    .storage{grid-template-columns:1fr}
+    .cols,.grid2,.sync{grid-template-columns:1fr}
+    .grid3{grid-template-columns:1fr}
+    .life{grid-template-columns:1fr;gap:22px}
+    .life-stage .arrow{right:50%;top:auto;bottom:-18px;transform:translateX(50%) rotate(90deg)}
+    .rules{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){.rv{transition:none;opacity:1;transform:none}*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="ruler-bg"></div>
+
+<!-- ===== MASTHEAD ===== -->
+<header>
+  <div class="wrap">
+    <span class="badge"><span class="dot"></span>System Blueprint · D:\ · 2026-06-15</span>
+    <h1 class="title disp">B<span>D</span>OS</h1>
+    <p class="subtitle">Bounkeo Digital Operating System — คู่มือเข้าใจระบบจัดการไฟล์ของคุณ</p>
+
+    <p class="thesis">
+      ปัญหาของคุณ <span class="strike">ไม่ใช่</span> การตั้งชื่อ การจัดเก็บ หรือหมวดหมู่ที่ขาดหายไป —
+      ปัญหาจริงคือ <b>ความลึกของการนำทาง (Navigation Depth)</b>
+      คุณ <em>จัดการ</em> ไฟล์ได้ดีอยู่แล้ว แต่ <em>เดินทาง</em> ไปหาไฟล์ที่ลึกถึงระดับ 9 ไม่ไหว
+    </p>
+
+    <div class="meta-row">
+      <span>ปรัชญา: <b>RAPA</b></span>
+      <span>พื้นที่รวม: <b>~700 GB</b></span>
+      <span>บัญชี: <b>6 Accounts</b></span>
+      <span>เป้าหมายความลึก: <b>≤ 5 Levels</b></span>
+      <span>แนวทาง: <b>Evolution · ไม่ใช่ Revolution</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 01 RAPA ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">01</span> ปรัชญาแกนกลาง</div>
+    <h2>RAPA — กระดูกสันหลังที่ <span class="hl">ห้ามรื้อ</span></h2>
+    <p class="lead">
+      RAPA ไม่ใช่ PARA แบบทั่วไป มันคือโครงสร้างที่คุณตั้งใจปรับมาเอง การวิเคราะห์ทั้งหมดยึดหลักว่า
+      <b>RAPA ไม่ใช่ปัญหา — การซ้อนชั้นที่มากเกินไปต่างหากคือปัญหา</b> สี่เสาหลักนี้คือสิ่งที่ต้องคงไว้เสมอ
+    </p>
+    <div class="rapa-grid">
+      <div class="rapa-card r"><div class="bar"></div><div class="letter disp">R</div><h3>Resources</h3><p>วัตถุดิบและคลังที่นำมาใช้ซ้ำได้ — สินทรัพย์ที่หยิบมาใช้กับงานหลายชิ้น</p></div>
+      <div class="rapa-card a"><div class="bar"></div><div class="letter disp">A</div><h3>Areas</h3><p>พื้นที่รับผิดชอบต่อเนื่อง — สิ่งที่ดูแลไปเรื่อยๆ ไม่มีวันจบ</p></div>
+      <div class="rapa-card p"><div class="bar"></div><div class="letter disp">P</div><h3>Projects</h3><p>งานที่มีจุดเริ่ม–จบชัดเจน <b style="color:var(--amber)">สำคัญกว่า Accounts</b> เสมอ</p></div>
+      <div class="rapa-card arc"><div class="bar"></div><div class="letter disp">A</div><h3>Archive</h3><p>ของที่เสร็จแล้วหรือเป็นประวัติศาสตร์ — เก็บก่อนลบเสมอ</p></div>
+    </div>
+    <p class="rapa-note"><span class="tag">หลักการ</span> เก็บถาวรก่อนลบ (Archive before Delete) · เดินหน้าแบบค่อยเป็นค่อยไป ไม่ย้ายข้อมูลแบบรื้อทั้งระบบ</p>
+  </div>
+</section>
+
+<!-- ===== 02 STORAGE ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">02</span> แผนที่พื้นที่จัดเก็บ</div>
+    <h2>700 GB อยู่ <span class="hl">ตรงไหน</span></h2>
+    <p class="lead">ก่อนแตะอะไร ต้องรู้ว่าน้ำหนักของไดรฟ์อยู่ที่ใด พื้นที่ส่วนใหญ่กระจุกอยู่แค่สองหมวด ซึ่งบอกเราว่าควร <b>ห้าม sync</b> อะไร</p>
+    <div class="storage">
+      <div class="stbar-set">
+        <div class="stbar"><div class="top"><span class="name">[02] Documents — Virtual Machines</span><span class="val">≈ 398 GB</span></div><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,#c98a3a,var(--amber))"></div></div></div>
+        <div class="stbar"><div class="top"><span class="name">[03] File — Projects · Accounts · Media · Bot</span><span class="val">≈ 288 GB</span></div><div class="track"><div class="fill" style="width:72%;background:linear-gradient(90deg,var(--path-dim),var(--path))"></div></div></div>
+        <div class="stbar"><div class="top"><span class="name">อื่นๆ — Games · Backup · Quick Share · Archive</span><span class="val">≈ 14 GB</span></div><div class="track"><div class="fill" style="width:7%;background:var(--muted2)"></div></div></div>
+      </div>
+      <div class="total-card">
+        <div class="big disp">~700</div>
+        <div class="lbl">GB Total · Drive D:\</div>
+        <div class="split">
+          <div><div class="k">หนักที่สุด</div><div class="v" style="color:var(--amber)">VM Images</div></div>
+          <div><div class="k">งานจริงอยู่ที่</div><div class="v" style="color:var(--path)">[03] File</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 03 ROOT COMPARE ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">03</span> โครงสร้างราก</div>
+    <h2>Root เดิม เทียบ <span class="hl">Root ใหม่</span></h2>
+    <p class="lead">การปรับที่ระดับรากคือ "วิวัฒนาการ" ไม่ใช่การรื้อ — แค่จัดหมวดให้ชัดขึ้น แยก Applications/เกมออกจากพื้นที่งาน และตั้งเลขนำหน้าเพื่อบังคับลำดับ</p>
+    <div class="cols">
+      <div class="panel cur">
+        <div class="ph"><span class="pill">เดิม</span> D:\ — Current</div>
+        <div class="tree">
+          <div class="row"><span class="ic">▸</span> Epic Games</div>
+          <div class="row"><span class="ic">▸</span> SteamLibrary</div>
+          <div class="row"><span class="ic">▸</span> TeraBoxDownload</div>
+          <div class="row hi"><span class="ic">▸</span> [01] Bounkeo</div>
+          <div class="row hi"><span class="ic">▸</span> [02] Documents</div>
+          <div class="row acc"><span class="ic">▸</span> [03] File</div>
+          <div class="row hi"><span class="ic">▸</span> [04] Quick Share</div>
+          <div class="row hi"><span class="ic">▸</span> [05] Backup</div>
+          <div class="row hi"><span class="ic">▸</span> [99] Archived</div>
+        </div>
+      </div>
+      <div class="panel new">
+        <div class="ph"><span class="pill">ใหม่</span> D:\ — Proposed</div>
+        <div class="tree">
+          <div class="row hi"><span class="ic">▸</span> [01] Personal</div>
+          <div class="row hi"><span class="ic">▸</span> [02] Documents</div>
+          <div class="row acc"><span class="ic">▸</span> [03] File</div>
+          <div class="row hi"><span class="ic">▸</span> [04] Resources</div>
+          <div class="row hi"><span class="ic">▸</span> [05] Quick Share</div>
+          <div class="row hi"><span class="ic">▸</span> [06] Backup</div>
+          <div class="row hi"><span class="ic">▸</span> [99] Archive</div>
+          <div class="row"><span class="ic">▸</span> Applications <span style="color:var(--muted2);font-size:11px">(เกม/โปรแกรมแยกออกมา)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 DEPTH DESCENT (signature) ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">04</span> หัวใจของปัญหา</div>
+    <h2>การ <span class="hl">ดำดิ่ง</span> ลงสู่ระดับ 9</h2>
+    <p class="lead">นี่คือพาธที่ลึกที่สุดในไดรฟ์ทั้งหมด แต่ละชั้นคือ "หนึ่งคลิก" ที่คุณต้องเสียไปก่อนถึงงานจริง ยิ่งลึก ยิ่งช้า ยิ่งหลง</p>
+
+    <div class="descent-head">
+      <div class="descent-stat">
+        <div class="s"><div class="n bad disp">9</div><div class="l">ระดับปัจจุบัน</div></div>
+        <div class="s"><div class="n good disp">5</div><div class="l">เพดานเป้าหมาย</div></div>
+        <div class="s"><div class="n disp" style="color:var(--amber)">−4</div><div class="l">คลิกที่ตัดทิ้งได้</div></div>
+      </div>
+    </div>
+
+    <div class="descent">
+      <div class="step"><span class="lv">L1</span><span class="node" style="background:var(--path)"></span><span class="name">D:</span></div>
+      <div class="step"><span class="lv">L2</span><span class="node" style="background:var(--path)"></span><span class="name">[03] File</span></div>
+      <div class="step"><span class="lv">L3</span><span class="node" style="background:#8fd0a0"></span><span class="name">[05] Account</span></div>
+      <div class="step"><span class="lv">L4</span><span class="node" style="background:#c9d07a"></span><span class="name">[06] Bot</span></div>
+      <div class="step"><span class="lv">L5</span><span class="node" style="background:var(--amber)"></span><span class="name">[01] Qazion.Bot</span></div>
+      <div class="step deep"><span class="lv">L6</span><span class="node" style="background:#ff9a54"></span><span class="name">Projects</span></div>
+      <div class="step deep"><span class="lv">L7</span><span class="node" style="background:#ff8454"></span><span class="name">[01] Anime Story</span></div>
+      <div class="step deep"><span class="lv">L8</span><span class="node" style="background:#ff7050"></span><span class="name">#02 Story</span></div>
+      <div class="step deep"><span class="lv">L9</span><span class="node" style="background:var(--coral)"></span><span class="name">Export File</span> <span class="seg">← งานจริงอยู่ตรงนี้</span></div>
+    </div>
+    <p class="descent-cap"><span style="color:var(--coral);font-size:18px">⚠</span> <span>ต้องผ่าน <b>9 ชั้น</b> ทุกครั้งเพื่อไปถึงไฟล์ Export หนึ่งไฟล์ ระดับ L4 ([06] Bot) และ L3↔L5 มีการซ้อนหมวดที่ยุบรวมได้ — นี่คือจุดที่เราจะตัดออกในส่วนถัดไป</span></p>
+  </div>
+</section>
+
+<!-- ===== 05 LIFECYCLE ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">05</span> โครงสร้างภายในบัญชี</div>
+    <h2>วงจรชีวิตของไฟล์: <span class="hl">RAW → ARCHIVE</span></h2>
+    <p class="lead">แทนที่จะซ้อน Projects/Anime/Story/Export ลงไปเรื่อยๆ ทุกบัญชีใช้ "5 ขั้นวงจรชีวิต" ที่แบนและเหมือนกันหมด — เปิดบัญชีไหนก็เจอหน้าตาเดียวกัน หาของได้ทันที</p>
+    <div class="life">
+      <div class="life-stage raw"><div class="idx">[01]</div><div class="nm">RAW</div><div class="ds">วัตถุดิบต้นทาง ยังไม่แตะ</div><span class="arrow">→</span></div>
+      <div class="life-stage edit"><div class="idx">[02]</div><div class="nm">EDIT</div><div class="ds">ไฟล์ที่กำลังทำงานอยู่</div><span class="arrow">→</span></div>
+      <div class="life-stage exp"><div class="idx">[03]</div><div class="nm">EXPORT</div><div class="ds">ผลงานพร้อมส่งมอบ</div><span class="arrow">→</span></div>
+      <div class="life-stage ast"><div class="idx">[04]</div><div class="nm">ASSETS</div><div class="ds">ของใช้ซ้ำของบัญชี</div><span class="arrow">→</span></div>
+      <div class="life-stage arc"><div class="idx">[99]</div><div class="nm">ARCHIVE</div><div class="ds">งานเสร็จ/ประวัติ</div></div>
+    </div>
+    <p class="rapa-note"><span class="tag">ผลลัพธ์</span> ความลึกภายในบัญชีเหลือคงที่ ไม่ว่ามีกี่โปรเจกต์ — ทุกอย่างอยู่ใต้ 5 โฟลเดอร์มาตรฐานนี้</p>
+  </div>
+</section>
+
+<!-- ===== 06 BEFORE/AFTER ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">06</span> ก่อน เทียบ หลัง</div>
+    <h2>พาธเดียวกัน <span class="hl">สั้นลง 4 ชั้น</span></h2>
+    <p class="lead">นำหลัก "ยุบหมวดซ้ำ + วงจรชีวิตแบน" มาใช้กับพาธที่ลึกที่สุด ความลึกจาก 9 เหลือ 5 โดย <b>ไม่ทำลาย RAPA</b> และไม่ย้ายข้อมูลออกนอกบริบทเดิม</p>
+    <div class="cols">
+      <div class="panel cur">
+        <div class="ph"><span class="pill">ก่อน · L9</span> ลึก ช้า หลง</div>
+        <div class="tree">
+          <div class="row hi">D:</div>
+          <div class="row ind1">[03] File</div>
+          <div class="row ind2">[05] Account</div>
+          <div class="row ind2" style="color:var(--coral)">└ [06] Bot</div>
+          <div class="row ind2" style="color:var(--coral);padding-left:60px">└ [01] Qazion.Bot</div>
+          <div class="row ind2" style="color:var(--coral);padding-left:80px">└ Projects</div>
+          <div class="row ind2" style="color:var(--coral);padding-left:100px">└ [01] Anime Story</div>
+          <div class="row ind2" style="color:var(--coral);padding-left:120px">└ #02 Story</div>
+          <div class="row ind2" style="color:var(--coral);padding-left:140px">└ Export File</div>
+        </div>
+      </div>
+      <div class="panel new">
+        <div class="ph"><span class="pill">หลัง · L5</span> แบน เร็ว ชัด</div>
+        <div class="tree">
+          <div class="row hi">D:</div>
+          <div class="row ind1">[03] File</div>
+          <div class="row ind2 acc">└ Qazion.Bot <span style="color:var(--muted2);font-size:11px">(ยุบ Account+Bot)</span></div>
+          <div class="row ind2" style="color:var(--path);padding-left:60px">└ Anime Story <span style="color:var(--muted2);font-size:11px">(โปรเจกต์ตรงๆ)</span></div>
+          <div class="row ind2" style="color:var(--path);padding-left:80px">└ [03] EXPORT</div>
+          <div class="row" style="padding-left:20px;color:var(--muted2);margin-top:6px;font-size:12px">บัญชีบอตถูกยุบเป็นชื่อบัญชีปกติ · "#02 Story" กลายเป็นไฟล์/ป้ายกำกับ ไม่ใช่โฟลเดอร์ซ้อน</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 07 OBSIDIAN ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">07</span> สมองของระบบ</div>
+    <h2>Obsidian ไม่ใช่ <span class="hl">ที่เก็บไฟล์</span></h2>
+    <p class="lead">ไฟล์อยู่ใน D:\ — Obsidian ทำหน้าที่เป็น "ชั้นความรู้" ที่ลอยอยู่เหนือไฟล์: แดชบอร์ด คลังเอกสาร ตัวติดตามโปรเจกต์ และคลัง SOP โดย <b>ไม่ลอกโครงสร้างโฟลเดอร์มาวาดเป็น ├── └──</b> เพราะแก้ยากและพังบนมือถือ — ใช้หัวข้อ ลิสต์ ลิงก์ภายใน แท็ก และเมทาดาทาแทน</p>
+    <div class="grid2" style="margin-bottom:22px">
+      <div class="card">
+        <h4>📊 บทบาทของ Obsidian</h4>
+        <ul>
+          <li>Dashboard — ภาพรวมงานที่กำลังเดิน</li>
+          <li>Documentation Hub — รวมเอกสารทั้งหมด</li>
+          <li>Knowledge Base — ฐานความรู้</li>
+          <li>Project Tracker — ติดตามสถานะโปรเจกต์</li>
+          <li>SOP Repository — ขั้นตอนการทำงานมาตรฐาน</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--coral)">⚠ บทเรียนสำคัญ</h4>
+        <div class="role" style="color:var(--coral)">อย่าทำแบบนี้ใน Obsidian</div>
+        <ul>
+          <li>อย่าวาดต้นไม้โฟลเดอร์ด้วย ├── └── │</li>
+          <li>เหตุผล: แก้ยาก · มือถือพัง · ดูแลลำบาก</li>
+          <li>ใช้แทน: Headings + Lists</li>
+          <li>ใช้แทน: Internal Links เชื่อมโน้ต</li>
+          <li>ใช้แทน: Tags + Metadata กรองงาน</li>
+        </ul>
+      </div>
+    </div>
+    <div class="role" style="margin-bottom:10px;color:var(--violet)">โครงสร้าง Vault ที่เสนอ</div>
+    <div class="vault">
+      <div class="v"><span class="n">00</span> Dashboard</div>
+      <div class="v"><span class="n">01</span> System</div>
+      <div class="v"><span class="n">02</span> Projects</div>
+      <div class="v"><span class="n">03</span> Accounts</div>
+      <div class="v"><span class="n">04</span> Learning</div>
+      <div class="v"><span class="n">05</span> Resources</div>
+      <div class="v"><span class="n">06</span> Archive</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 08 DEVICES + SYNC ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">08</span> อุปกรณ์และการซิงก์</div>
+    <h2>สามอุปกรณ์ <span class="hl">หนึ่งระบบ</span></h2>
+    <p class="lead">แต่ละเครื่องมีหน้าที่ชัดเจน และ Syncthing ซิงก์เฉพาะของเบาที่ต้องใช้ข้ามเครื่อง — ไม่แตะ VM หรือไฟล์ใหญ่ที่จะทำให้ซิงก์พัง</p>
+    <div class="grid3" style="margin-bottom:22px">
+      <div class="card"><h4>💻 Notebook A</h4><div class="role">Production</div><ul><li>ตัดต่อ (Editing)</li><li>เขียนโปรแกรม</li><li>งาน AI</li></ul></div>
+      <div class="card"><h4>💻 Notebook B</h4><div class="role">Secondary</div><ul><li>เขียนเอกสาร</li><li>ทำงานทางไกล</li><li>สำรองข้อมูล</li></ul></div>
+      <div class="card"><h4>📱 Smartphone</h4><div class="role">Capture · Dashboard</div><ul><li>Obsidian</li><li>จดโน้ตเร็ว</li><li>มอนิเตอร์งาน</li></ul></div>
+    </div>
+    <div class="sync">
+      <div class="box yes">
+        <h4>✓ ซิงก์ผ่าน Syncthing</h4>
+        <ul><li>Obsidian Vault</li><li>Documentation</li><li>Export Files</li><li>Quick Share</li></ul>
+      </div>
+      <div class="box no">
+        <h4>✕ ห้ามซิงก์</h4>
+        <ul><li>VM Images</li><li>Steam Library</li><li>Cache</li><li>RAW Video ขนาดใหญ่</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 09 AGENT RULES ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">09</span> ผู้ช่วยอัตโนมัติ</div>
+    <h2>BDOS File Management Agent — <span class="hl">12 กฎเหล็ก</span></h2>
+    <p class="lead">เอเจนต์ทำงานบน D:\ ภายใต้กฎที่ปกป้องข้อมูลของคุณเสมอ หลักใหญ่: <b>วิเคราะห์ก่อน ลงมือทีหลัง · ถามก่อนทุกการเปลี่ยนแปลง · เก็บก่อนลบ</b></p>
+    <div class="rules">
+      <div class="rule"><div class="rn disp">01</div><div class="rt"><b>ไม่ลบ</b> อะไรโดยไม่ได้รับอนุมัติชัดเจน</div></div>
+      <div class="rule"><div class="rn disp">02</div><div class="rt"><b>ไม่ย้ายไฟล์อัตโนมัติ</b> — สร้างแผนย้ายก่อนเสมอ</div></div>
+      <div class="rule"><div class="rn disp">03</div><div class="rt">สร้าง <b>Changelog</b> ทุกครั้ง</div></div>
+      <div class="rule"><div class="rn disp">04</div><div class="rt"><b>รักษาประวัติ</b> ไม่เขียนทับโดยไม่สำรอง</div></div>
+      <div class="rule"><div class="rn disp">05</div><div class="rt"><b>เคารพ RAPA</b></div></div>
+      <div class="rule"><div class="rn disp">06</div><div class="rt"><b>Projects สำคัญกว่า Accounts</b></div></div>
+      <div class="rule"><div class="rn disp">07</div><div class="rt">รายงาน <b>การละเมิดความลึก</b> ของโฟลเดอร์</div></div>
+      <div class="rule"><div class="rn disp">08</div><div class="rt"><b>วิเคราะห์ก่อน ลงมือทีหลัง</b></div></div>
+      <div class="rule"><div class="rn disp">09</div><div class="rt"><b>เก็บถาวรก่อนลบ</b></div></div>
+      <div class="rule"><div class="rn disp">10</div><div class="rt">รายงาน <b>ไฟล์ซ้ำ</b> — ไม่ลบเองอัตโนมัติ</div></div>
+      <div class="rule"><div class="rn disp">11</div><div class="rt">อัปเดต <b>เอกสารใน Obsidian</b></div></div>
+      <div class="rule"><div class="rn disp">12</div><div class="rt"><b>ถามก่อนเสมอ</b> ก่อน Move · Rename · Delete · Merge · Archive</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 10 CASE STUDIES ===== -->
+<section>
+  <div class="wrap rv">
+    <div class="eyebrow"><span class="num">10</span> Case Study · การใช้งานจริง</div>
+    <h2>ระบบนี้ <span class="hl">ทำงานยังไง</span> ในชีวิตจริง</h2>
+    <p class="lead">สี่สถานการณ์จริงจากบัญชีและโปรเจกต์ของคุณเอง เพื่อให้เห็นว่าทุกชิ้นส่วน — RAPA, วงจรชีวิต, อุปกรณ์, และเอเจนต์ — ประกอบกันเป็นการทำงานจริงได้อย่างไร</p>
+
+    <div class="tabs">
+      <button class="tab active" data-c="c1">A · เปิดโปรเจกต์ใหม่</button>
+      <button class="tab" data-c="c2">B · หาไฟล์งานให้เร็ว</button>
+      <button class="tab" data-c="c3">C · ปิดงาน → Archive</button>
+      <button class="tab" data-c="c4">D · ทำงานข้ามเครื่อง</button>
+    </div>
+
+    <!-- CASE 1 -->
+    <div class="case active" id="c1">
+      <div class="case-head"><h3>เปิดโปรเจกต์ Anime ใหม่ใน Qazion.Bot</h3><span class="scn">Lifecycle · RAW → EXPORT</span></div>
+      <p class="case-intro">คุณเริ่มงานอนิเมะเรื่องใหม่ในบัญชี Qazion.Bot ระบบใหม่ทำให้ทุกขั้นตอนอยู่ที่ความลึกคงที่ และมี "บ้าน" ที่ชัดเจนสำหรับไฟล์ทุกประเภท</p>
+      <div class="steps">
+        <div class="cstep"><div class="marker">1</div><h5>สร้างโฟลเดอร์โปรเจกต์ (ลึกแค่ L4)</h5><p>โปรเจกต์อยู่ใต้ชื่อบัญชีตรงๆ ไม่ต้องผ่าน [05] Account → [06] Bot อีกต่อไป</p><div class="pathbox">D:<span class="dim">\</span>[03] File<span class="dim">\</span>Qazion.Bot<span class="dim">\</span><span style="color:var(--amber)">Sky Saga</span></div></div>
+        <div class="cstep"><div class="marker">2</div><h5>ทิ้งวัตถุดิบลง RAW</h5><p>ฟุตเทจดิบ ภาพต้นฉบับ เสียงต้นทาง — เข้า [01] RAW โดยยังไม่แตะต้อง (กฎ: เก็บต้นฉบับไว้เสมอ)</p><div class="pathbox">…<span class="dim">\</span>Sky Saga<span class="dim">\</span><span style="color:#6b8cff">[01] RAW</span><span class="dim">\</span>scene_01_source.mp4</div></div>
+        <div class="cstep"><div class="marker">3</div><h5>ทำงานใน EDIT</h5><p>ไฟล์โปรเจกต์ตัดต่อ เวอร์ชันระหว่างทำ ทุกอย่างที่ "ยังไม่เสร็จ" อยู่ที่นี่</p><div class="pathbox">…<span class="dim">\</span>Sky Saga<span class="dim">\</span><span style="color:var(--amber)">[02] EDIT</span><span class="dim">\</span>sky_saga_v3.prproj</div></div>
+        <div class="cstep"><div class="marker">4</div><h5>ส่งออกไปที่ EXPORT</h5><p>ไฟล์พร้อมส่งมอบลง [03] EXPORT — และนี่คือโฟลเดอร์เดียวที่ Syncthing จะซิงก์ข้ามเครื่อง</p><div class="pathbox">…<span class="dim">\</span>Sky Saga<span class="dim">\</span><span style="color:var(--path)">[03] EXPORT</span><span class="dim">\</span>sky_saga_final_1080p.mp4</div></div>
+        <div class="cstep"><div class="marker">5</div><h5>โลโก้/ทรานสิชันใช้ซ้ำ → ASSETS</h5><p>ของที่ใช้ได้กับหลายโปรเจกต์ในบัญชีนี้ ไม่ก็อปวางซ้ำ แต่เก็บที่ [04] ASSETS</p><div class="pathbox">…<span class="dim">\</span>Sky Saga<span class="dim">\</span><span style="color:var(--violet)">[04] ASSETS</span><span class="dim">\</span>qazion_intro_logo.mov</div></div>
+      </div>
+      <div class="case-outcome"><span class="lbl">ผลลัพธ์</span><p>ทุกไฟล์มี "บ้าน" ที่เดาได้ทันที ความลึกไม่เกิน L5 และเปิดบัญชีอื่นก็เจอ RAW/EDIT/EXPORT แบบเดียวกันเป๊ะ</p></div>
+    </div>
+
+    <!-- CASE 2 -->
+    <div class="case" id="c2">
+      <div class="case-head"><h3>เปิดงานที่กำลังทำอยู่ให้เร็วที่สุด</h3><span class="scn">Navigation · ลดจำนวนคลิก</span></div>
+      <p class="case-intro">KPI หลักของระบบคือ "จำนวนคลิกกว่าจะถึงงานจริง" สถานการณ์นี้เทียบของเดิม (L9) กับของใหม่ (L5) สำหรับการเปิดไฟล์ Export ของ Anime Story</p>
+      <div class="clickcmp">
+        <div class="cc before">
+          <div class="h">ก่อน — 9 คลิก</div>
+          <div class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div>
+          <div class="cnt disp">9 คลิก</div>
+        </div>
+        <div class="cc after">
+          <div class="h">หลัง — 5 คลิก</div>
+          <div class="dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div>
+          <div class="cnt disp">5 คลิก</div>
+        </div>
+      </div>
+      <div class="steps" style="margin-top:24px">
+        <div class="cstep"><div class="marker">✕</div><h5>เส้นทางเดิม</h5><p>ต้องไล่ผ่านชั้นซ้อนที่ซ้ำกัน (Account แล้วยังมี Bot อีก)</p><div class="pathbox warn">[03] File › [05] Account › [06] Bot › [01] Qazion.Bot › Projects › [01] Anime Story › #02 Story › Export File</div></div>
+        <div class="cstep"><div class="marker">✓</div><h5>เส้นทางใหม่</h5><p>ยุบหมวดซ้ำ + วงจรชีวิตแบน เหลือ 5 ชั้นและอ่านง่ายขึ้น</p><div class="pathbox">[03] File › Qazion.Bot › Anime Story › [03] EXPORT</div></div>
+        <div class="cstep"><div class="marker">★</div><h5>ทางลัดเสริม</h5><p>ปักหมุดโปรเจกต์ที่กำลังทำใน Quick Access ของ Windows และลิงก์จาก Obsidian Dashboard — เหลือ "1 คลิก" จริงๆ</p><div class="note"><span>◆</span> Obsidian โน้ตของโปรเจกต์ฝังลิงก์ <span class="mono">file:///D:/[03] File/Qazion.Bot/Anime Story</span> ไว้ กดจากมือถือหรือโน้ตบุ๊กก็เด้งไปที่โฟลเดอร์</div></div>
+      </div>
+      <div class="case-outcome"><span class="lbl">ผลลัพธ์</span><p>ลดจาก 9 เหลือ 5 คลิก (และ 1 คลิกถ้าใช้ Quick Access) โดยไม่ย้ายข้อมูลออกนอก RAPA เลย</p></div>
+    </div>
+
+    <!-- CASE 3 -->
+    <div class="case" id="c3">
+      <div class="case-head"><h3>ปิดโปรเจกต์ที่เสร็จแล้ว อย่างปลอดภัย</h3><span class="scn">Archive · เก็บก่อนลบ</span></div>
+      <p class="case-intro">โปรเจกต์ Anime Story ออกอากาศแล้ว คุณอยากเคลียร์ EDIT ให้โล่ง แต่ต้องไม่สูญเสียอะไร — นี่คือจุดที่ BDOS Agent ทำงานตามกฎ "วิเคราะห์ก่อน ถามก่อน เก็บก่อนลบ"</p>
+      <div class="steps">
+        <div class="cstep"><div class="marker">1</div><h5>เอเจนต์วิเคราะห์ก่อน (กฎ 8)</h5><p>สแกนเฉพาะโฟลเดอร์โปรเจกต์ ไม่แตะทั้งไดรฟ์ รายงานขนาด ไฟล์ซ้ำ และความลึก</p><div class="pathbox">รายงาน: 42 ไฟล์ · 18 GB · พบ RAW ซ้ำใน EDIT 3 ไฟล์</div></div>
+        <div class="cstep"><div class="marker">2</div><h5>สร้างแผนย้าย — ไม่ย้ายเอง (กฎ 2)</h5><p>เสนอแผนย้ายทั้งโปรเจกต์ไป [99] ARCHIVE ของบัญชี พร้อมรอการอนุมัติ</p><div class="pathbox">PLAN: Qazion.Bot\Anime Story  →  Qazion.Bot\<span style="color:var(--muted2)">[99] ARCHIVE</span>\Anime Story</div></div>
+        <div class="cstep"><div class="marker">3</div><h5>ถามก่อนลงมือ (กฎ 12)</h5><p>เอเจนต์หยุดและถามยืนยัน พร้อมแสดง Changelog ที่จะบันทึก (กฎ 3)</p><div class="note"><span>◆</span> "ยืนยันย้าย 42 ไฟล์ไป Archive? จะสร้าง changelog_2026-06-15.md และไม่ลบไฟล์ใดทั้งสิ้น"</div></div>
+        <div class="cstep"><div class="marker">4</div><h5>อัปเดต Obsidian (กฎ 11)</h5><p>โน้ตโปรเจกต์ใน <span class="mono">02 Projects</span> ถูกย้ายลิงก์ไป <span class="mono">06 Archive</span> และเปลี่ยนสถานะแท็กเป็น <span class="mono">#status/done</span></p><div class="pathbox">Obsidian: #status/active  →  #status/done · ย้ายลิงก์ไป [[06 Archive]]</div></div>
+      </div>
+      <div class="case-outcome"><span class="lbl">ผลลัพธ์</span><p>EDIT โล่งขึ้น แต่ไม่มีอะไรหาย ทุกการเปลี่ยนแปลงมี changelog และผ่านการอนุมัติของคุณก่อนเสมอ</p></div>
+    </div>
+
+    <!-- CASE 4 -->
+    <div class="case" id="c4">
+      <div class="case-head"><h3>จับงานบนมือถือ → ตัดต่อบนโน้ตบุ๊ก → ส่งต่อ</h3><span class="scn">Cross-Device · Syncthing</span></div>
+      <p class="case-intro">ไอเดียมาตอนอยู่นอกบ้าน คุณจดบนมือถือ แล้วงานจริงไปเกิดบน Notebook A ทุกอย่างไหลลื่นเพราะแต่ละเครื่องรู้หน้าที่ตัวเอง และ Syncthing ซิงก์เฉพาะของเบา</p>
+      <div class="steps">
+        <div class="cstep"><div class="marker">1</div><h5>📱 มือถือ — Capture</h5><p>จดไอเดียและสคริปต์ลง Obsidian ทันที (มือถือ = จับงาน + แดชบอร์ด เท่านั้น)</p><div class="pathbox">Obsidian: 02 Projects › Sky Saga › idea_2026-06-15.md</div></div>
+        <div class="cstep"><div class="marker">2</div><h5>↔ Syncthing ซิงก์โน้ต</h5><p>เฉพาะ Vault ของ Obsidian ที่เบา — ไม่ใช่ฟุตเทจ — ซิงก์ไปทุกเครื่องภายในไม่กี่วินาที</p><div class="note"><span>◆</span> ห้ามซิงก์: VM, Steam, RAW Video ใหญ่ → ป้องกันการซิงก์ค้าง</div></div>
+        <div class="cstep"><div class="marker">3</div><h5>💻 Notebook A — Production</h5><p>เปิดโน้ตที่ซิงก์มา เริ่มตัดต่อจริง ไฟล์หนักทั้งหมดอยู่ในเครื่องนี้เท่านั้น (RAW/EDIT ไม่ออกไปไหน)</p><div class="pathbox">D:\[03] File\Qazion.Bot\Sky Saga\<span style="color:var(--amber)">[02] EDIT</span></div></div>
+        <div class="cstep"><div class="marker">4</div><h5>📤 EXPORT ซิงก์กลับ</h5><p>พอ export เสร็จ ไฟล์ลง [03] EXPORT ซึ่งอยู่ในรายการที่ Syncthing ซิงก์ — ดึงต่อจาก Notebook B หรือแชร์ผ่าน Quick Share ได้เลย</p><div class="pathbox">[03] EXPORT  →  Syncthing  →  Notebook B · Quick Share</div></div>
+      </div>
+      <div class="case-outcome"><span class="lbl">ผลลัพธ์</span><p>ไอเดียจากมือถือถึงไฟล์ส่งมอบ ไหลผ่าน 3 เครื่องโดยไม่ย้ายไฟล์หนักข้ามเครื่องเลย — เบา เร็ว ไม่พัง</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap">
+    <div class="fmark disp">B<span>D</span>OS</div>
+    <p>ระบบพร้อมใช้แล้ว — งานต่อไปคือ "ประสิทธิภาพการทำงาน" ไม่ใช่ "คุณภาพการจัดระเบียบ"</p>
+    <p style="margin-top:4px">Preserve RAPA · Reduce Depth · Evolution not Revolution</p>
+  </div>
+</footer>
+
+<script>
+  // Case study tabs
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.case').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById(t.dataset.c).classList.add('active');
+    });
+  });
+  // Scroll reveal
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}});
+  },{threshold:.12});
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
