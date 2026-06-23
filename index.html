@@ -288,10 +288,10 @@
 
     <div class="meta-row">
       <span>ปรัชญา: <b>RAPA</b></span>
-      <span>พื้นที่รวม: <b>~1.5 TB</b></span>
-      <span>บัญชี: <b>8 Accounts</b></span>
-      <span>เป้าหมายความลึก: <b>≤ 5 Levels</b></span>
-      <span>RAM: <b>24 GB</b> · CPU: <b>12 Cores</b></span>
+      <span>พื้นที่รวม: <b id="meta-total">~700 GB</b></span>
+      <span>บัญชี: <b id="meta-accounts">6 Accounts</b></span>
+      <span>เป้าหมายความลึก: <b id="meta-depth">≤ 5 Levels</b></span>
+      <span id="meta-hw" style="display:none">RAM: <b id="meta-ram"></b> · CPU: <b id="meta-cpu"></b></span>
       <span>แนวทาง: <b>Evolution · ไม่ใช่ Revolution</b></span>
     </div>
   </div>
@@ -320,17 +320,17 @@
 <section>
   <div class="wrap rv">
     <div class="eyebrow"><span class="num">02</span> แผนที่พื้นที่จัดเก็บ</div>
-    <h2>1.5 TB อยู่ <span class="hl">ตรงไหน</span></h2>
+    <h2 id="storage-h2">700 GB อยู่ <span class="hl">ตรงไหน</span></h2>
     <p class="lead">ก่อนแตะอะไร ต้องรู้ว่าน้ำหนักของไดรฟ์อยู่ที่ใด พื้นที่ส่วนใหญ่กระจุกอยู่แค่สองหมวด ซึ่งบอกเราว่าควร <b>ห้าม sync</b> อะไร</p>
     <div class="storage">
       <div class="stbar-set">
-        <div class="stbar"><div class="top"><span class="name">[02] Documents — Virtual Machines</span><span class="val">≈ 512 GB</span></div><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,#c98a3a,var(--amber))"></div></div></div>
-        <div class="stbar"><div class="top"><span class="name">[03] File — Projects · Accounts · Media · Bot</span><span class="val">≈ 924 GB</span></div><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,var(--path-dim),var(--path))"></div></div></div>
-        <div class="stbar"><div class="top"><span class="name">อื่นๆ — Games · Backup · Quick Share · Archive</span><span class="val">≈ 100 GB</span></div><div class="track"><div class="fill" style="width:18%;background:var(--muted2)"></div></div></div>
+        <div class="stbar"><div class="top"><span class="name">[02] Documents — Virtual Machines</span><span class="val" id="val-s1">≈ 398 GB</span></div><div class="track"><div class="fill" id="bar-s1" style="width:100%;background:linear-gradient(90deg,#c98a3a,var(--amber))"></div></div></div>
+        <div class="stbar"><div class="top"><span class="name">[03] File — Projects · Accounts · Media · Bot</span><span class="val" id="val-s2">≈ 288 GB</span></div><div class="track"><div class="fill" id="bar-s2" style="width:72%;background:linear-gradient(90deg,var(--path-dim),var(--path))"></div></div></div>
+        <div class="stbar"><div class="top"><span class="name">อื่นๆ — Games · Backup · Quick Share · Archive</span><span class="val" id="val-s3">≈ 14 GB</span></div><div class="track"><div class="fill" id="bar-s3" style="width:7%;background:var(--muted2)"></div></div></div>
       </div>
       <div class="total-card">
-        <div class="big disp">~1.5</div>
-        <div class="lbl">TB Total · Drive D:\</div>
+        <div class="big disp" id="total-big">~700</div>
+        <div class="lbl" id="total-lbl">GB Total · Drive D:\</div>
         <div class="split">
           <div><div class="k">หนักที่สุด</div><div class="v" style="color:var(--amber)">VM Images</div></div>
           <div><div class="k">งานจริงอยู่ที่</div><div class="v" style="color:var(--path)">[03] File</div></div>
@@ -638,6 +638,331 @@
     <p style="margin-top:4px">Preserve RAPA · Reduce Depth · Evolution not Revolution</p>
   </div>
 </footer>
+
+<!-- ===== SPEC EDITOR PANEL ===== -->
+<style>
+  #spec-fab{
+    position:fixed;bottom:28px;right:28px;z-index:9999;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--amber);border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 20px rgba(0,0,0,.5);
+    transition:transform .2s;
+    font-size:22px;
+  }
+  #spec-fab:hover{transform:scale(1.08)}
+  #spec-fab.open{background:var(--coral)}
+
+  #spec-panel{
+    position:fixed;bottom:92px;right:28px;z-index:9998;
+    width:340px;
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    padding:22px 20px 20px;
+    box-shadow:0 8px 40px rgba(0,0,0,.6);
+    display:none;
+    font-family:'JetBrains Mono',monospace;
+  }
+  #spec-panel.show{display:block;animation:panelIn .22s ease}
+  @keyframes panelIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  #spec-panel h4{
+    font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;
+    color:var(--txt);margin-bottom:16px;display:flex;align-items:center;gap:8px;
+  }
+  #spec-panel h4 span{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:400}
+
+  .sp-group{margin-bottom:14px}
+  .sp-label{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .sp-row{display:flex;gap:8px;align-items:center}
+  .sp-row input[type=number]{
+    flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:13px;
+    padding:7px 10px;outline:none;
+  }
+  .sp-row input[type=number]:focus{border-color:var(--amber)}
+  .sp-row .sp-unit{font-size:11px;color:var(--muted2);min-width:26px}
+  .sp-row select{
+    flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:13px;
+    padding:7px 10px;outline:none;cursor:pointer;
+  }
+  .sp-row select:focus{border-color:var(--amber)}
+
+  .sp-divider{height:1px;background:var(--line-soft);margin:14px 0}
+
+  #spec-apply{
+    width:100%;padding:10px;border-radius:10px;
+    background:var(--amber);color:var(--ink);
+    border:none;cursor:pointer;font-weight:700;font-size:13px;
+    font-family:'Space Grotesk',sans-serif;letter-spacing:.04em;
+    transition:opacity .15s;margin-top:4px;
+  }
+  #spec-apply:hover{opacity:.85}
+  #spec-reset{
+    width:100%;padding:8px;border-radius:10px;margin-top:6px;
+    background:transparent;color:var(--muted2);
+    border:1px solid var(--line-soft);cursor:pointer;font-size:11px;
+    font-family:'JetBrains Mono',monospace;
+    transition:color .15s;
+  }
+  #spec-reset:hover{color:var(--coral)}
+
+  .sp-live-total{
+    text-align:center;padding:8px;border-radius:10px;
+    background:var(--ink2);border:1px solid var(--line-soft);
+    margin-bottom:14px;
+  }
+  .sp-live-total .n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:26px;color:var(--amber)}
+  .sp-live-total .u{font-size:11px;color:var(--muted);letter-spacing:.1em}
+
+  @media(max-width:480px){
+    #spec-panel{right:12px;bottom:84px;width:calc(100vw - 24px)}
+    #spec-fab{right:12px;bottom:20px}
+  }
+</style>
+
+<button id="spec-fab" title="ตั้งค่าสเปค" aria-label="เปิดหน้าต่างตั้งค่าสเปค">⚙</button>
+
+<div id="spec-panel" role="dialog" aria-label="ตั้งค่าสเปคอุปกรณ์">
+  <h4>ตั้งค่าสเปค <span>· อัปเดตทันที</span></h4>
+
+  <div class="sp-live-total">
+    <div class="n" id="live-total-num">700</div>
+    <div class="u" id="live-total-unit">GB TOTAL · DRIVE D:\</div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">Documents / VM Images</div>
+    <div class="sp-row">
+      <input type="number" id="inp-s1" min="0" max="99999" value="398">
+      <select id="unit-s1"><option value="GB">GB</option><option value="TB">TB</option></select>
+    </div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">File / Projects / Media / Bot</div>
+    <div class="sp-row">
+      <input type="number" id="inp-s2" min="0" max="99999" value="288">
+      <select id="unit-s2"><option value="GB">GB</option><option value="TB">TB</option></select>
+    </div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">อื่นๆ / Games / Backup / Archive</div>
+    <div class="sp-row">
+      <input type="number" id="inp-s3" min="0" max="99999" value="14">
+      <select id="unit-s3"><option value="GB">GB</option><option value="TB">TB</option></select>
+    </div>
+  </div>
+
+  <div class="sp-divider"></div>
+
+  <div class="sp-group">
+    <div class="sp-label">จำนวน Accounts</div>
+    <div class="sp-row">
+      <input type="number" id="inp-acc" min="1" max="99" value="6">
+      <span class="sp-unit">Acc</span>
+    </div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">เป้าหมายความลึก</div>
+    <div class="sp-row">
+      <input type="number" id="inp-depth" min="1" max="9" value="5">
+      <span class="sp-unit">Lvl</span>
+    </div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">RAM (ไม่บังคับ)</div>
+    <div class="sp-row">
+      <input type="number" id="inp-ram" min="0" max="9999" value="" placeholder="เช่น 24">
+      <span class="sp-unit">GB</span>
+    </div>
+  </div>
+
+  <div class="sp-group">
+    <div class="sp-label">CPU Cores (ไม่บังคับ)</div>
+    <div class="sp-row">
+      <input type="number" id="inp-cpu" min="0" max="999" value="" placeholder="เช่น 12">
+      <span class="sp-unit">C</span>
+    </div>
+  </div>
+
+  <button id="spec-apply">✓ ใช้ค่านี้</button>
+  <button id="spec-reset">↺ รีเซ็ตกลับค่าเดิม</button>
+</div>
+
+<script>
+(function(){
+  /* ---------- DEFAULT VALUES ---------- */
+  const DEFAULTS = {
+    s1:398, u1:'GB', s2:288, u2:'GB', s3:14, u3:'GB',
+    acc:6, depth:5, ram:'', cpu:''
+  };
+
+  /* ---------- HELPERS ---------- */
+  function toGB(val, unit){ return unit==='TB' ? val*1024 : val; }
+
+  function fmtSize(gb){
+    if(gb >= 1024){
+      const t = gb/1024;
+      return { num: (t%1===0 ? t : parseFloat(t.toFixed(2))).toString(), unit:'TB' };
+    }
+    return { num: Math.round(gb).toString(), unit:'GB' };
+  }
+
+  /* ---------- LIVE TOTAL (while typing) ---------- */
+  function updateLiveTotal(){
+    const s1 = toGB(+document.getElementById('inp-s1').value||0, document.getElementById('unit-s1').value);
+    const s2 = toGB(+document.getElementById('inp-s2').value||0, document.getElementById('unit-s2').value);
+    const s3 = toGB(+document.getElementById('inp-s3').value||0, document.getElementById('unit-s3').value);
+    const total = s1+s2+s3;
+    const f = fmtSize(total);
+    document.getElementById('live-total-num').textContent = '~'+f.num;
+    document.getElementById('live-total-unit').textContent = f.unit+' TOTAL · DRIVE D:\\';
+  }
+
+  /* ---------- APPLY TO PAGE ---------- */
+  function applySpec(){
+    const s1gb = toGB(+document.getElementById('inp-s1').value||0, document.getElementById('unit-s1').value);
+    const s2gb = toGB(+document.getElementById('inp-s2').value||0, document.getElementById('unit-s2').value);
+    const s3gb = toGB(+document.getElementById('inp-s3').value||0, document.getElementById('unit-s3').value);
+    const acc  = +document.getElementById('inp-acc').value||6;
+    const dep  = +document.getElementById('inp-depth').value||5;
+    const ram  = document.getElementById('inp-ram').value.trim();
+    const cpu  = document.getElementById('inp-cpu').value.trim();
+    const total = s1gb+s2gb+s3gb||1;
+
+    const maxGB = Math.max(s1gb,s2gb,s3gb)||1;
+    const f = fmtSize(total);
+    const totalStr = '~'+f.num+' '+f.unit;
+    const s1f = fmtSize(s1gb); const s2f = fmtSize(s2gb); const s3f = fmtSize(s3gb);
+
+    /* --- header meta-row --- */
+    document.getElementById('meta-total').textContent  = totalStr;
+    document.getElementById('meta-accounts').textContent = acc+' Accounts';
+    document.getElementById('meta-depth').textContent  = '≤ '+dep+' Levels';
+
+    const hwSpan = document.getElementById('meta-hw');
+    if(ram || cpu){
+      hwSpan.style.display='inline';
+      if(ram)  document.getElementById('meta-ram').textContent = ram+' GB';
+      if(cpu)  document.getElementById('meta-cpu').textContent = cpu+' Cores';
+    } else {
+      hwSpan.style.display='none';
+    }
+
+    /* --- section 02 heading --- */
+    const h2 = document.getElementById('storage-h2');
+    if(h2) h2.innerHTML = totalStr+' อยู่ <span class="hl">ตรงไหน</span>';
+
+    /* --- storage bars --- */
+    document.getElementById('val-s1').textContent = '≈ '+s1f.num+' '+s1f.unit;
+    document.getElementById('val-s2').textContent = '≈ '+s2f.num+' '+s2f.unit;
+    document.getElementById('val-s3').textContent = '≈ '+s3f.num+' '+s3f.unit;
+    document.getElementById('bar-s1').style.width = Math.round(s1gb/maxGB*100)+'%';
+    document.getElementById('bar-s2').style.width = Math.round(s2gb/maxGB*100)+'%';
+    document.getElementById('bar-s3').style.width = Math.max(2,Math.round(s3gb/maxGB*100))+'%';
+
+    /* --- total card --- */
+    document.getElementById('total-big').textContent = '~'+f.num;
+    document.getElementById('total-lbl').textContent = f.unit+' Total · Drive D:\\';
+
+    /* --- close panel --- */
+    closePanel();
+
+    /* --- persist to localStorage --- */
+    try{
+      localStorage.setItem('bdos_spec', JSON.stringify({
+        s1:document.getElementById('inp-s1').value, u1:document.getElementById('unit-s1').value,
+        s2:document.getElementById('inp-s2').value, u2:document.getElementById('unit-s2').value,
+        s3:document.getElementById('inp-s3').value, u3:document.getElementById('unit-s3').value,
+        acc, dep, ram, cpu
+      }));
+    }catch(e){}
+  }
+
+  /* ---------- RESET ---------- */
+  function resetSpec(){
+    document.getElementById('inp-s1').value=DEFAULTS.s1; document.getElementById('unit-s1').value=DEFAULTS.u1;
+    document.getElementById('inp-s2').value=DEFAULTS.s2; document.getElementById('unit-s2').value=DEFAULTS.u2;
+    document.getElementById('inp-s3').value=DEFAULTS.s3; document.getElementById('unit-s3').value=DEFAULTS.u3;
+    document.getElementById('inp-acc').value=DEFAULTS.acc;
+    document.getElementById('inp-depth').value=DEFAULTS.depth;
+    document.getElementById('inp-ram').value=DEFAULTS.ram;
+    document.getElementById('inp-cpu').value=DEFAULTS.cpu;
+    try{ localStorage.removeItem('bdos_spec'); }catch(e){}
+    applySpec();
+  }
+
+  /* ---------- RESTORE FROM STORAGE ---------- */
+  function restoreFromStorage(){
+    try{
+      const raw = localStorage.getItem('bdos_spec');
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      if(d.s1) document.getElementById('inp-s1').value=d.s1;
+      if(d.u1) document.getElementById('unit-s1').value=d.u1;
+      if(d.s2) document.getElementById('inp-s2').value=d.s2;
+      if(d.u2) document.getElementById('unit-s2').value=d.u2;
+      if(d.s3) document.getElementById('inp-s3').value=d.s3;
+      if(d.u3) document.getElementById('unit-s3').value=d.u3;
+      if(d.acc)  document.getElementById('inp-acc').value=d.acc;
+      if(d.dep)  document.getElementById('inp-depth').value=d.dep;
+      if(d.ram!==undefined) document.getElementById('inp-ram').value=d.ram;
+      if(d.cpu!==undefined) document.getElementById('inp-cpu').value=d.cpu;
+      applySpec();
+    }catch(e){}
+  }
+
+  /* ---------- PANEL TOGGLE ---------- */
+  function openPanel(){
+    document.getElementById('spec-panel').classList.add('show');
+    document.getElementById('spec-fab').classList.add('open');
+    document.getElementById('spec-fab').setAttribute('aria-expanded','true');
+    updateLiveTotal();
+  }
+  function closePanel(){
+    document.getElementById('spec-panel').classList.remove('show');
+    document.getElementById('spec-fab').classList.remove('open');
+    document.getElementById('spec-fab').setAttribute('aria-expanded','false');
+  }
+  function togglePanel(){
+    if(document.getElementById('spec-panel').classList.contains('show')) closePanel();
+    else openPanel();
+  }
+
+  /* ---------- BIND EVENTS ---------- */
+  document.getElementById('spec-fab').addEventListener('click', togglePanel);
+  document.getElementById('spec-apply').addEventListener('click', applySpec);
+  document.getElementById('spec-reset').addEventListener('click', resetSpec);
+
+  /* live total while typing */
+  ['inp-s1','inp-s2','inp-s3','unit-s1','unit-s2','unit-s3'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', updateLiveTotal);
+    document.getElementById(id).addEventListener('change', updateLiveTotal);
+  });
+
+  /* close panel when clicking outside */
+  document.addEventListener('click', function(e){
+    const panel = document.getElementById('spec-panel');
+    const fab   = document.getElementById('spec-fab');
+    if(panel.classList.contains('show') && !panel.contains(e.target) && !fab.contains(e.target)){
+      closePanel();
+    }
+  });
+
+  /* Enter key to apply */
+  document.getElementById('spec-panel').addEventListener('keydown', function(e){
+    if(e.key==='Enter') applySpec();
+    if(e.key==='Escape') closePanel();
+  });
+
+  /* restore saved spec on load */
+  restoreFromStorage();
+})();
+</script>
 
 <script>
   // Case study tabs
